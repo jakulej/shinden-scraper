@@ -1,0 +1,8 @@
+[package]
+name = "shinden_scraper"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+reqwest = { version = "0.12.24", features = ["blocking"] }
+scraper = "0.24.0"
