@@ -1,6 +1,7 @@
 pub mod client;
 pub mod episode;
 pub mod player;
+pub mod anime;
 pub mod error;
 
 pub use client::ShindenClient;
