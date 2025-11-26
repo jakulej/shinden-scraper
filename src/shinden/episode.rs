@@ -2,7 +2,7 @@ use reqwest::blocking::Client;
 
 use super::ShindenError;
 
-struct Episode{
+pub struct Episode{
     pub name: String,
     pub episode_number: u8,
     id: u8,
