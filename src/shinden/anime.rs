@@ -1,33 +1,58 @@
-use super::MAIN_URL;
-use super::ShindenError;
-use reqwest::blocking::Client;
 use super::Episode;
+use super::ShindenClient;
+use super::ShindenError;
+use super::MAIN_URL;
+use reqwest::blocking::Client;
 use scraper;
+use scraper::ElementRef;
+use scraper::Html;
+use scraper::Selector;
 
-pub struct Anime{
+pub struct Anime {
     pub name: String,
     pub episodes_number: u8,
     pub id: u8,
-    
+    html_document: Html,
 }
 
 impl Anime {
-    pub fn from_url(url: &str, client: &Client) -> Result<Self, ShindenError>{
-        let html = client
-            .get(url)
-            .send()
-            .map_err(|_| ShindenError::NetworkError)?
-            .text()
-            .map_err(|_| ShindenError::NetworkError)?;
+    pub fn from_url(url: &str, client: &ShindenClient) -> Result<Self, ShindenError> {
+        let html = client.fetch(url).unwrap();
         let document = scraper::Html::parse_document(&html);
-        let tr_selector = scraper::Selector::parse("tr").unwrap();
-        document.select(&tr_selector).for_each(|element| println!("{:?}", element.value()));
-        
-        Ok(Self{name: String::new() , episodes_number: 10u8 , id:100u8 })
 
+        Ok(Self {
+            name: String::new(),
+            episodes_number: 10u8,
+            id: 100u8,
+            html_document: document,
+        })
+    }
+    pub fn get_episodes(self: Anime, client: &ShindenClient) -> Result<Vec<Episode>, ShindenError> {
+        let tr_selector = scraper::Selector::parse("tr").unwrap();
+        self.html_document
+            .select(&tr_selector)
+            .skip(1)
+            .map(|element| Episode::from_url(get_episode_url(element), client))
+            .collect()
     }
     pub fn select_episode(episode_nr: u8) -> Result<Episode, ShindenError> {
         !todo!();
     }
+}
 
+fn get_episode_url(element: ElementRef) -> String {
+    let td_selector = Selector::parse("td").unwrap();
+    let a_selector = Selector::parse("a").unwrap();
+    let button = element.select(&td_selector).last().unwrap();
+
+    let url = MAIN_URL.to_string();
+    let url = url + button
+            .select(&a_selector)
+            .next()
+            .unwrap()
+            .value()
+            .attr("href")
+            .unwrap();
+    println!("Epsiode url: {}", url);
+    url
 }

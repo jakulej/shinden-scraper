@@ -1,4 +1,4 @@
-const MAIN_URL: &str = "https://shinden.pl/";
+const MAIN_URL: &str = "https://shinden.pl";
 pub mod client;
 pub mod episode;
 pub mod player;
