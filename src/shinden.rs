@@ -8,3 +8,4 @@ pub mod error;
 pub use client::ShindenClient;
 pub use episode::Episode;
 pub use error::ShindenError;
+pub use player::Player;

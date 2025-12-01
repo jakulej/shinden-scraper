@@ -1,5 +1,8 @@
 use reqwest::blocking::Client;
+use scraper::ElementRef;
 use scraper::Html;
+use scraper::Selector;
+use super::Player;
 
 use super::{ShindenClient, ShindenError};
 
@@ -15,12 +18,23 @@ impl Episode {
             html_document: document,
         })
     }
-    pub fn get_players(self, client: &ShindenClient) -> Result<Vec<Episode>, ShindenError> {
+    pub fn get_players(self, client: &ShindenClient) -> Result<Vec<Player>, ShindenError> {
+
         let tr_selector = scraper::Selector::parse("tr").unwrap();
+
         self.html_document
             .select(&tr_selector)
             .skip(1)
-            .map(|element| Player::from_url()
+            .map(|element| Player::from_url(&get_player_url(element), client))
             .collect()
     }
+}
+fn get_player_url(element: ElementRef) -> String {
+    let td_selector = Selector::parse("td").unwrap();
+    let a_selector = Selector::parse("a").unwrap();
+    let button = element.select(&td_selector).last().unwrap();
+        
+    let url = String::new();
+
+    url
 }
