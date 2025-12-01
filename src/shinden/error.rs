@@ -1,10 +1,11 @@
-use std::fmt;
+use std::fmt::{self, write};
 
 #[derive(Debug, Clone)]
 pub enum ShindenError {
     HtmlParsing,
     WrongInput,
-    NetworkError
+    NetworkError,
+    WebDriverError
 }
 
 impl fmt::Display for ShindenError {
@@ -12,7 +13,8 @@ impl fmt::Display for ShindenError {
        match *self {
            ShindenError::HtmlParsing => write!(f, "Problem ocured during html parsing"),
            ShindenError::WrongInput => write!(f, "Invalid input"),
-           ShindenError::NetworkError => write!(f, "Network Error")
+           ShindenError::NetworkError => write!(f, "Network Error"),
+            ShindenError::WebDriverError => write!(f, "WebDriver Error")
        }
     }
 }
