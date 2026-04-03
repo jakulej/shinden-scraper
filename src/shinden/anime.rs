@@ -2,7 +2,7 @@ use super::Episode;
 use super::ShindenClient;
 use super::ShindenError;
 use super::MAIN_URL;
-use reqwest::blocking::Client;
+use reqwest::Client;
 use scraper;
 use scraper::ElementRef;
 use scraper::Html;
@@ -16,10 +16,9 @@ pub struct Anime {
 }
 
 impl Anime {
-    pub fn from_url(url: &str, client: &ShindenClient) -> Result<Self, ShindenError> {
-        let html = client.fetch(url).unwrap();
+    pub async fn from_url(url: &str, client: &ShindenClient) -> Result<Self, ShindenError> {
+        let html = client.fetch(url).await.unwrap();
         let document = scraper::Html::parse_document(&html);
-
         Ok(Self {
             name: String::new(),
             episodes_number: 10u8,
@@ -27,7 +26,10 @@ impl Anime {
             html_document: document,
         })
     }
-    pub fn get_episodes(self: Anime, client: &ShindenClient) -> Result<Vec<Episode>, ShindenError> {
+    pub async fn get_episodes(
+        self: Anime,
+        client: &ShindenClient,
+    ) -> Result<Vec<Episode>, ShindenError> {
         let tr_selector = scraper::Selector::parse("tr").unwrap();
         self.html_document
             .select(&tr_selector)
@@ -46,7 +48,8 @@ fn get_episode_url(element: ElementRef) -> String {
     let button = element.select(&td_selector).last().unwrap();
 
     let url = MAIN_URL.to_string();
-    let url = url + button
+    let url = url
+        + button
             .select(&a_selector)
             .next()
             .unwrap()

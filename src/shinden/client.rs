@@ -1,10 +1,10 @@
 use super::ShindenError;
-use thirtyfour::prelude::*;
 use crate::shinden::anime::Anime;
-use reqwest::blocking::Client;
 use reqwest::header::{
     HeaderMap, HeaderValue, ACCEPT, ACCEPT_LANGUAGE, COOKIE, HOST, REFERER, USER_AGENT,
 };
+use reqwest::Client;
+use thirtyfour::prelude::*;
 
 pub struct ShindenClient {
     pub client: Client,
@@ -19,17 +19,28 @@ impl ShindenClient {
 
         Ok(Self { client })
     }
-    pub fn fetch(&self, url: &str) -> Result<String, ShindenError> {
+
+    pub async fn fetch(&self, url: &str) -> Result<String, ShindenError> {
         Ok(self
             .client
             .get(url)
             .send()
+            .await
             .map_err(|_| ShindenError::NetworkError)?
             .text()
+            .await
             .map_err(|_| ShindenError::NetworkError)?)
     }
-    pub fn fetch_player(&self, url: &str) -> Result<String, ShindenError> {
-        !todo();
+
+    pub async fn fetch_player(&self, url: &str) -> Result<String, ShindenError> {
+        //Use Selenium to click button
+        let caps = DesiredCapabilities::firefox();
+        let driver = WebDriver::new("127.0.0.1:4444", caps)
+            .await
+            .map_err(|_| ShindenError::WebDriverError)?;
+        //print!("{:?}", player_button);
+
+        Ok(String::new())
     }
 }
 
