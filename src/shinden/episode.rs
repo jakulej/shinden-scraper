@@ -10,7 +10,7 @@ pub struct Episode {
 }
 
 impl Episode {
-    pub fn from_url(url: String, client: &ShindenClient) -> Result<Self, ShindenError> {
+    pub async fn from_url(url: String, client: &ShindenClient) -> Result<Self, ShindenError> {
         let html = client.fetch(&url).await.unwrap();
         let document = scraper::Html::parse_document(&html);
         Ok(Self {

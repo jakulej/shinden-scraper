@@ -2,6 +2,7 @@ use super::Episode;
 use super::ShindenClient;
 use super::ShindenError;
 use super::MAIN_URL;
+use futures::future::try_join_all;
 use reqwest::Client;
 use scraper;
 use scraper::ElementRef;
@@ -14,6 +15,8 @@ pub struct Anime {
     pub id: u8,
     html_document: Html,
 }
+
+type SelectEpisodeFn = fn(u8) -> Result<Episode, ShindenError>;
 
 impl Anime {
     pub async fn from_url(url: &str, client: &ShindenClient) -> Result<Self, ShindenError> {
@@ -31,13 +34,14 @@ impl Anime {
         client: &ShindenClient,
     ) -> Result<Vec<Episode>, ShindenError> {
         let tr_selector = scraper::Selector::parse("tr").unwrap();
-        self.html_document
-            .select(&tr_selector)
-            .skip(1)
-            .map(|element| Episode::from_url(get_episode_url(element), client))
-            .collect()
+        let iter = self.html_document.select(&tr_selector).skip(1);
+
+        Ok(
+            try_join_all(iter.map(|element| Episode::from_url(get_episode_url(element), client)))
+                .await?,
+        )
     }
-    pub fn select_episode(episode_nr: u8) -> Result<Episode, ShindenError> {
+    pub fn _select_episode(_episode_nr: u8) -> Result<Episode, ShindenError> {
         !todo!();
     }
 }

@@ -26,20 +26,31 @@ impl ShindenClient {
             .get(url)
             .send()
             .await
-            .map_err(|_| ShindenError::NetworkError)?
+            .map_err(|_| ShindenError::NetworkError("Test"))?
             .text()
             .await
             .map_err(|_| ShindenError::NetworkError)?)
     }
-
     pub async fn fetch_player(&self, url: &str) -> Result<String, ShindenError> {
         //Use Selenium to click button
         let caps = DesiredCapabilities::firefox();
         let driver = WebDriver::new("127.0.0.1:4444", caps)
             .await
             .map_err(|_| ShindenError::WebDriverError)?;
-        //print!("{:?}", player_button);
 
+        driver
+            .goto(url)
+            .await
+            .map_err(|_| ShindenError::WebDriverError)?;
+        //print!("{:?}", player_button);
+        let players: Vec<WebElement> = driver
+            .find_all(By::Css("[id^='prefix_']"))
+            .await
+            .map_err(|_| ShindenError::WebDriverError)?;
+
+        players
+            .iter()
+            .for_each(|button| println!("Elemend ID: {:?}", button.element_id));
         Ok(String::new())
     }
 }
