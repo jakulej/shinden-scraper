@@ -1,38 +1,74 @@
-use super::Player;
-use scraper::ElementRef;
-use scraper::Html;
-use scraper::Selector;
-
-use super::{ShindenClient, ShindenError};
+use super::statics::RODO_COOKIE;
+use super::MAIN_URL;
+use std::time::Duration;
+use thirtyfour::common::capabilities::firefox::FirefoxPreferences;
+use thirtyfour::prelude::*;
 
 pub struct Episode {
-    html_document: Html,
+    url: String,
 }
 
 impl Episode {
-    pub async fn from_url(url: String, client: &ShindenClient) -> Result<Self, ShindenError> {
-        let html = client.fetch(&url).await.unwrap();
-        let document = scraper::Html::parse_document(&html);
-        Ok(Self {
-            html_document: document,
-        })
+    pub fn new(url: String) -> Self {
+        Self { url }
     }
-    pub fn get_players(self, client: &ShindenClient) -> Result<Vec<Player>, ShindenError> {
-        let tr_selector = scraper::Selector::parse("tr").unwrap();
 
-        self.html_document
-            .select(&tr_selector)
-            .skip(1)
-            .map(|element| Player::from_url(&get_player_url(element), client))
-            .collect()
+    pub async fn download(&self) -> Result<String, WebDriverError> {
+        let driver: WebDriver = setup_web_driver("http://127.0.0.1:4444").await?;
+
+        init_shinden_cookies(&driver).await?;
+
+        driver.goto(self.url.clone()).await?;
+        let players: Vec<WebElement> = driver.find_all(By::Css("[id^='player_data_']")).await?;
+
+        select_player(players).await?;
+
+        let url = get_episode_url(&driver).await?;
+        println!("Episode url: {}", url);
+        driver.quit().await?;
+
+        Ok(url)
     }
 }
-fn get_player_url(element: ElementRef) -> String {
-    let td_selector = Selector::parse("td").unwrap();
-    let a_selector = Selector::parse("a").unwrap();
-    let button = element.select(&td_selector).last().unwrap();
+async fn get_episode_url(driver: &WebDriver) -> Result<String, WebDriverError> {
+    let parent = driver.find(By::Id("player-block")).await?;
+    let iframe = parent
+        .query(By::Css("iframe"))
+        .wait(Duration::from_secs(10), Duration::from_millis(500))
+        .first()
+        .await?;
+    let url = iframe.attr("src").await?;
 
-    let url = String::new();
+    Ok(url.unwrap())
+}
+async fn select_player(players: Vec<WebElement>) -> Result<(), WebDriverError> {
+    players.first().unwrap().click().await?;
 
-    url
+    Ok(())
+}
+async fn setup_web_driver(server_url: &str) -> Result<WebDriver, WebDriverError> {
+    let mut caps = DesiredCapabilities::firefox();
+
+    let mut prefs = FirefoxPreferences::new();
+    prefs.set("intl.accept_languages", "pl-PL,pl")?;
+    prefs.set("intl.locale.requested", "pl-PL")?;
+
+    caps.set_preferences(prefs)?;
+    let driver = WebDriver::new(server_url, caps).await?;
+
+    Ok(driver)
+}
+
+async fn init_shinden_cookies(driver: &WebDriver) -> Result<(), WebDriverError> {
+    driver.goto(MAIN_URL).await?;
+
+    driver
+        .add_cookie(Cookie::new("cb-rodo", RODO_COOKIE))
+        .await?;
+    driver.refresh().await?;
+    let btn = driver
+        .find(By::XPath("//button[contains(., 'Zaakceptuj')]"))
+        .await?;
+    btn.click().await?;
+    Ok(())
 }
