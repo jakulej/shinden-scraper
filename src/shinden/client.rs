@@ -1,10 +1,12 @@
+use std::time::Duration;
+
+use super::statics::RODO_COOKIE;
 use super::ShindenError;
-use crate::shinden::anime::Anime;
+use super::MAIN_URL;
 use reqwest::header::{
     HeaderMap, HeaderValue, ACCEPT, ACCEPT_LANGUAGE, COOKIE, HOST, REFERER, USER_AGENT,
 };
 use reqwest::Client;
-use thirtyfour::prelude::*;
 
 pub struct ShindenClient {
     pub client: Client,
@@ -20,30 +22,10 @@ impl ShindenClient {
         Ok(Self { client })
     }
 
-    pub async fn fetch(&self, url: &str) -> Result<String, ShindenError> {
-        Ok(self
-            .client
-            .get(url)
-            .send()
-            .await
-            .map_err(|_| ShindenError::NetworkError)?
-            .text()
-            .await
-            .map_err(|_| ShindenError::NetworkError)?)
-    }
-
-    pub async fn fetch_player(&self, url: &str) -> Result<String, ShindenError> {
-        //Use Selenium to click button
-        let caps = DesiredCapabilities::firefox();
-        let driver = WebDriver::new("127.0.0.1:4444", caps)
-            .await
-            .map_err(|_| ShindenError::WebDriverError)?;
-        //print!("{:?}", player_button);
-
-        Ok(String::new())
+    pub async fn fetch(&self, url: &str) -> Result<String, reqwest::Error> {
+        Ok(self.client.get(url).send().await?.text().await?)
     }
 }
-
 fn append_headers() -> HeaderMap {
     let mut headers = HeaderMap::new();
     headers.insert(USER_AGENT, HeaderValue::from_static("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/101.0.4951.64 Safari/537.36 Edg/101.0.1210.47"));
