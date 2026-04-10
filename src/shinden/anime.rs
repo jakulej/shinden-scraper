@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use super::Episode;
 use super::ShindenClient;
 use super::ShindenError;

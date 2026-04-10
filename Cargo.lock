@@ -1493,6 +1493,7 @@ dependencies = [
  "futures",
  "reqwest 0.13.2",
  "scraper",
+ "serde_json",
  "thirtyfour",
  "tokio",
 ]
