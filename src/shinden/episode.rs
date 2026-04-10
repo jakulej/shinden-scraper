@@ -1,5 +1,7 @@
 use super::statics::RODO_COOKIE;
+use super::Player;
 use super::MAIN_URL;
+use futures::future::join_all;
 use std::time::Duration;
 use thirtyfour::common::capabilities::firefox::FirefoxPreferences;
 use thirtyfour::prelude::*;
@@ -21,7 +23,16 @@ impl Episode {
         driver.goto(self.url.clone()).await?;
         let players: Vec<WebElement> = driver.find_all(By::Css("[id^='player_data_']")).await?;
 
-        select_player(players).await?;
+        let mut vector = Vec::new();
+
+        for web_element in players {
+            match Player::new(web_element).await? {
+                Some(element) => vector.push(element),
+                None => (),
+            }
+        }
+
+        select_player(vector).await?;
 
         let url = get_episode_url(&driver).await?;
         println!("Episode url: {}", url);
@@ -41,8 +52,8 @@ async fn get_episode_url(driver: &WebDriver) -> Result<String, WebDriverError> {
 
     Ok(url.unwrap())
 }
-async fn select_player(players: Vec<WebElement>) -> Result<(), WebDriverError> {
-    players.first().unwrap().click().await?;
+async fn select_player(players: Vec<Player>) -> Result<(), WebDriverError> {
+    players.first().unwrap().get_element().click().await?;
 
     Ok(())
 }
