@@ -1,9 +1,13 @@
 #![allow(dead_code, unused)]
+mod shinden;
+mod yt_dlp;
+
 use crate::shinden::Episode;
 
 use self::shinden::anime::Anime;
 use self::shinden::ShindenClient;
-mod shinden;
+
+use yt_dlp::download_m3u8;
 
 #[tokio::main]
 async fn main() {
