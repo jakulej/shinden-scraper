@@ -58,6 +58,6 @@ fn get_episode_url(element: ElementRef) -> String {
             .value()
             .attr("href")
             .unwrap();
-    println!("Epsiode url: {}", url);
+    //println!("Epsiode url: {}", url);
     url
 }
