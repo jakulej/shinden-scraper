@@ -37,7 +37,7 @@ impl Episode {
         click_robust(&driver, &player.button).await?;
 
         wait_for_player_iframe(&driver).await?;
-        let output = "anime.mp4"
+        let output = "anime.mp4";
 
         match player.kind {
             PlayerKind::RUMBLE => downloader::rumble(&driver, output).await?,
@@ -46,7 +46,7 @@ impl Episode {
         }
         //let url = get_episode_url(&driver).await?;
         //println!("Episode url: {}", url);
-        //driver.quit().await?;
+        driver.quit().await?;
 
         //print!("Hello {:?}", url);
         Ok("Hello".to_string())

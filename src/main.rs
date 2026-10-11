@@ -1,6 +1,5 @@
 #![allow(dead_code, unused)]
 mod shinden;
-mod yt_dlp;
 
 use std::print;
 
@@ -10,7 +9,6 @@ use self::shinden::anime::Anime;
 use self::shinden::ShindenClient;
 
 use thirtyfour::common::print;
-use yt_dlp::download_m3u8;
 
 #[tokio::main]
 async fn main() {
