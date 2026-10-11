@@ -35,3 +35,11 @@ pub fn download_drive(url: &str, output: &str) -> std::io::Result<bool> {
         .status()?;
     Ok(status.success())
 }
+
+pub fn download_cda(url: &str, output: &str) -> std::io::Result<bool> {
+    let status = Command::new("yt-dlp")
+    .args(["-o", output])
+    .arg(url)
+    .status()?;
+    Ok(status.success())
+}
