@@ -1,4 +1,3 @@
-
 use super::statics::RODO_COOKIE;
 use super::Player;
 use super::PlayerKind;
@@ -8,7 +7,6 @@ use std::print;
 use std::time::Duration;
 use thirtyfour::common::capabilities::firefox::FirefoxPreferences;
 use thirtyfour::prelude::*;
-
 
 pub async fn setup_web_driver(server_url: &str) -> Result<WebDriver, WebDriverError> {
     let mut caps = DesiredCapabilities::firefox();
@@ -69,4 +67,14 @@ pub async fn wait_for_player_iframe(driver: &WebDriver) -> WebDriverResult<()> {
         .first()
         .await?;
     Ok(())
+}
+pub async fn get_gdrive_url(driver: &WebDriver) -> WebDriverResult<String> {
+    let iframe = driver
+        .query(By::Css("#player-block iframe[src*='drive.google.com']"))
+        .wait(Duration::from_secs(30), Duration::from_millis(250))
+        .first()
+        .await?;
+
+    let src = iframe.attr("src").await?.unwrap_or_default();
+    Ok(src)
 }

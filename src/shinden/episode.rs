@@ -3,6 +3,7 @@ use super::webdrive_utils::{
 };
 use crate::shinden::player;
 use crate::shinden::webdrive_utils::click_robust;
+use super::downloader;
 
 use super::statics::RODO_COOKIE;
 use super::Player;
@@ -36,9 +37,12 @@ impl Episode {
         click_robust(&driver, &player.button).await?;
 
         wait_for_player_iframe(&driver).await?;
-        
+        let output = "anime.mp4"
+
         match player.kind {
-            PlayerKind::RUMBLE =>
+            PlayerKind::RUMBLE => downloader::rumble(&driver, output).await?,
+            PlayerKind::GOOGLE => downloader::gdrive(&driver, output).await?,
+            _ => ()
         }
         //let url = get_episode_url(&driver).await?;
         //println!("Episode url: {}", url);

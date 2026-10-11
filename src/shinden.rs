@@ -7,6 +7,8 @@ pub mod player;
 pub mod statics;
 mod player_kind;
 mod webdrive_utils;
+mod downloader;
+mod yt_dlp;
 
 pub use client::ShindenClient;
 pub use episode::Episode;
