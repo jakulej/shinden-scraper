@@ -1,7 +1,16 @@
+use super::webdrive_utils::{
+    get_episode_url, init_shinden_cookies, setup_web_driver, wait_for_player_iframe,
+};
+use crate::shinden::player;
+use crate::shinden::webdrive_utils::click_robust;
+use super::downloader;
+
 use super::statics::RODO_COOKIE;
 use super::Player;
+use super::PlayerKind;
 use super::MAIN_URL;
 use futures::future::join_all;
+use std::print;
 use std::time::Duration;
 use thirtyfour::common::capabilities::firefox::FirefoxPreferences;
 use thirtyfour::prelude::*;
@@ -17,69 +26,50 @@ impl Episode {
 
     pub async fn download(&self) -> Result<String, WebDriverError> {
         let driver: WebDriver = setup_web_driver("http://127.0.0.1:4444").await?;
-
         init_shinden_cookies(&driver).await?;
 
         driver.goto(self.url.clone()).await?;
-        let players: Vec<WebElement> = driver.find_all(By::Css("[id^='player_data_']")).await?;
 
-        let mut vector = Vec::new();
+        let mut player_list = get_player_list(&driver).await?;
 
-        for web_element in players {
-            match Player::new(web_element).await? {
-                Some(element) => vector.push(element),
-                None => (),
-            }
+        let player = select_player(player_list)?;
+        player.button.click().await?;
+        click_robust(&driver, &player.button).await?;
+
+        wait_for_player_iframe(&driver).await?;
+        let output = "anime.mp4"
+
+        match player.kind {
+            PlayerKind::RUMBLE => downloader::rumble(&driver, output).await?,
+            PlayerKind::GOOGLE => downloader::gdrive(&driver, output).await?,
+            _ => ()
         }
+        //let url = get_episode_url(&driver).await?;
+        //println!("Episode url: {}", url);
+        //driver.quit().await?;
 
-        select_player(vector).await?;
-
-        let url = get_episode_url(&driver).await?;
-        println!("Episode url: {}", url);
-        driver.quit().await?;
-
-        Ok(url)
+        //print!("Hello {:?}", url);
+        Ok("Hello".to_string())
     }
 }
-async fn get_episode_url(driver: &WebDriver) -> Result<String, WebDriverError> {
-    let parent = driver.find(By::Id("player-block")).await?;
-    let iframe = parent
-        .query(By::Css("iframe"))
-        .wait(Duration::from_secs(10), Duration::from_millis(500))
-        .first()
-        .await?;
-    let url = iframe.attr("src").await?;
+async fn get_player_list(driver: &WebDriver) -> Result<Vec<Player>, WebDriverError> {
+    let players: Vec<WebElement> = driver.find_all(By::Css("[id^='player_data_']")).await?;
 
-    Ok(url.unwrap())
-}
-async fn select_player(players: Vec<Player>) -> Result<(), WebDriverError> {
-    players.first().unwrap().get_element().click().await?;
+    let mut vector = Vec::new();
 
-    Ok(())
-}
-async fn setup_web_driver(server_url: &str) -> Result<WebDriver, WebDriverError> {
-    let mut caps = DesiredCapabilities::firefox();
+    for web_element in players {
+        match Player::new(web_element).await? {
+            Some(element) => vector.push(element),
+            None => (),
+        }
+    }
 
-    let mut prefs = FirefoxPreferences::new();
-    prefs.set("intl.accept_languages", "pl-PL,pl")?;
-    prefs.set("intl.locale.requested", "pl-PL")?;
-
-    caps.set_preferences(prefs)?;
-    let driver = WebDriver::new(server_url, caps).await?;
-
-    Ok(driver)
+    return Ok(vector)
 }
 
-async fn init_shinden_cookies(driver: &WebDriver) -> Result<(), WebDriverError> {
-    driver.goto(MAIN_URL).await?;
-
-    driver
-        .add_cookie(Cookie::new("cb-rodo", RODO_COOKIE))
-        .await?;
-    driver.refresh().await?;
-    let btn = driver
-        .find(By::XPath("//button[contains(., 'Zaakceptuj')]"))
-        .await?;
-    btn.click().await?;
-    Ok(())
+fn select_player(mut players: Vec<Player>) -> Result<Player, WebDriverError> {
+    //Random player
+    //let player = players.pop().unwrap();
+    let player = players.pop().unwrap();
+    Ok(player)
 }
