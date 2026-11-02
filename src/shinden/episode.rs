@@ -1,58 +1,56 @@
+use super::downloader;
 use super::webdrive_utils::{
     get_episode_url, init_shinden_cookies, setup_web_driver, wait_for_player_iframe,
 };
 use crate::shinden::player;
 use crate::shinden::webdrive_utils::click_robust;
-use super::downloader;
 
 use super::statics::RODO_COOKIE;
 use super::Player;
 use super::PlayerKind;
 use super::MAIN_URL;
 use futures::future::join_all;
-use std::print;
+use std::{print, println};
 use std::time::Duration;
 use thirtyfour::common::capabilities::firefox::FirefoxPreferences;
 use thirtyfour::prelude::*;
 
+#[derive(Debug)]
 pub struct Episode {
     url: String,
+    number: usize,
 }
 
 impl Episode {
-    pub fn new(url: String) -> Self {
-        Self { url }
+    pub fn new(url: String, number: usize) -> Self {
+        Self { url, number }
     }
 
-    pub async fn download(&self) -> Result<String, WebDriverError> {
+    pub async fn download(&self, output: &str) -> WebDriverResult<bool> {
         let driver: WebDriver = setup_web_driver("http://127.0.0.1:4444").await?;
         init_shinden_cookies(&driver).await?;
 
         driver.goto(self.url.clone()).await?;
-
+        println!("Downloading Episode {}",self.number);
         let mut player_list = get_player_list(&driver).await?;
-
+        println!("Found players {:#?}",player_list);
+        
         let player = select_player(player_list)?;
-        player.button.click().await?;
-        click_robust(&driver, &player.button).await?;
+        run_player(&player, &driver).await?;
 
-        wait_for_player_iframe(&driver).await?;
-        let output = "anime.mp4";
+        let output = format!("anime - {}.mp4",self.number);
 
         match player.kind {
-            PlayerKind::RUMBLE => downloader::rumble(&driver, output).await?,
-            PlayerKind::GOOGLE => downloader::gdrive(&driver, output).await?,
-            _ => ()
+            PlayerKind::RUMBLE => downloader::rumble(driver, &output).await,
+            PlayerKind::GOOGLE => downloader::gdrive(driver, &output).await,
+            _ => {
+                driver.quit().await?;
+                Ok(false)
+            }
         }
-        //let url = get_episode_url(&driver).await?;
-        //println!("Episode url: {}", url);
-        driver.quit().await?;
-
-        //print!("Hello {:?}", url);
-        Ok("Hello".to_string())
     }
 }
-async fn get_player_list(driver: &WebDriver) -> Result<Vec<Player>, WebDriverError> {
+async fn get_player_list(driver: &WebDriver) -> WebDriverResult<Vec<Player>> {
     let players: Vec<WebElement> = driver.find_all(By::Css("[id^='player_data_']")).await?;
 
     let mut vector = Vec::new();
@@ -64,12 +62,21 @@ async fn get_player_list(driver: &WebDriver) -> Result<Vec<Player>, WebDriverErr
         }
     }
 
-    return Ok(vector)
+    return Ok(vector);
+}
+
+async fn run_player(mut player: &Player, driver: &WebDriver) -> WebDriverResult<()> {
+    println!("BUTTON: {:?}",player.button);
+    click_robust(&driver, &player.button).await?;
+    println!("Clicked player!");
+    wait_for_player_iframe(&driver).await?;
+    Ok(())
 }
 
 fn select_player(mut players: Vec<Player>) -> Result<Player, WebDriverError> {
     //Random player
     //let player = players.pop().unwrap();
     let player = players.pop().unwrap();
+    println!("Selected player {}",player);
     Ok(player)
 }
