@@ -1,4 +1,4 @@
-use super::webdrive_utils::get_gdrive_url;
+use super::webdrive_utils::{get_gdrive_url, get_cda_url};
 use super::yt_dlp;
 use std::process::Command;
 use std::time::Duration;
@@ -10,15 +10,23 @@ use thirtyfour::{
 };
 use tokio::time::Instant;
 
-pub async fn rumble(driver: &WebDriver, output: &str) -> WebDriverResult<()> {
-    let m3u8_url = get_m3u8_url(driver).await?;
-    yt_dlp::download_m3u8(&m3u8_url, output);
-    Ok(())
+pub async fn rumble(driver: WebDriver, output: &str) -> WebDriverResult<bool> {
+    let m3u8_url = get_m3u8_url(&driver).await?;
+    driver.quit().await?;
+
+    Ok(yt_dlp::download_m3u8(&m3u8_url, output)?)
 }
-pub async fn gdrive(driver: &WebDriver, output: &str) -> WebDriverResult<()> {
-    let url = get_gdrive_url(driver).await?;
-    yt_dlp::download_drive(&url, output);
-    Ok(())
+pub async fn gdrive(driver: WebDriver, output: &str) -> WebDriverResult<bool> {
+    let url = get_gdrive_url(&driver).await?;
+    driver.quit().await?;
+
+    Ok(yt_dlp::download_drive(&url, output)?)
+}
+pub async fn cda(driver: WebDriver, output: &str) -> WebDriverResult<bool> {
+    let url = get_cda_url(&driver).await?;
+    driver.quit().await?;
+
+    Ok(yt_dlp::download_cda(&url, output)?)
 }
 
 async fn get_m3u8_url(driver: &WebDriver) -> WebDriverResult<String> {

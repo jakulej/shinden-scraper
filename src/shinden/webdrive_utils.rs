@@ -10,6 +10,7 @@ use thirtyfour::prelude::*;
 
 pub async fn setup_web_driver(server_url: &str) -> Result<WebDriver, WebDriverError> {
     let mut caps = DesiredCapabilities::firefox();
+    //caps.set_headless()?;
 
     let mut prefs = FirefoxPreferences::new();
     prefs.set("intl.accept_languages", "pl-PL,pl")?;
@@ -77,4 +78,13 @@ pub async fn get_gdrive_url(driver: &WebDriver) -> WebDriverResult<String> {
 
     let src = iframe.attr("src").await?.unwrap_or_default();
     Ok(src)
+}
+pub async fn get_cda_url(driver: &WebDriver) -> WebDriverResult<String> {
+    let iframe = driver
+        .query(By::Css("#player-block iframe[src*='ebd.cda.pl']"))
+        .wait(Duration::from_secs(30), Duration::from_millis(250))
+        .first()
+        .await?;
+
+    Ok(iframe.attr("src").await?.unwrap_or_default())
 }

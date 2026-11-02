@@ -16,7 +16,6 @@ pub fn download_m3u8(url: &str, output: &str) -> std::io::Result<bool> {
 }
 
 fn drive_id(url: &str) -> Option<&str> {
-    // .../file/d/<ID>/preview albo .../open?id=<ID>
     if let Some(rest) = url.split("/file/d/").nth(1) {
         return rest.split(&['/', '?'][..]).next();
     }
